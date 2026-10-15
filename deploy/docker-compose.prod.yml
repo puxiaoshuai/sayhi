@@ -1,0 +1,42 @@
+# 生产 MongoDB（同机 Docker，只监听回环，不对外）
+#
+# 与仓库根目录 docker-compose.yml（本地开发用）的四点区别：
+#   1. 开鉴权（本地那份没有，生产必须有）
+#   2. 宿主端口绑 127.0.0.1，公网扫不到
+#   3. 限制 wiredTiger 缓存到 0.25G —— 2G 内存机器不限制会被 Mongo 吃光
+#   4. 不带 mongo-express —— 数据库管理界面不要放在生产公网机上
+#
+# 用法（deploy/ 目录下）：
+#   echo "MONGO_PASSWORD=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)" > .env
+#   docker compose -f docker-compose.prod.yml up -d
+#   docker compose -f docker-compose.prod.yml ps
+#
+# 密码刻意用纯字母数字：@ : / # + 这些字符写进 MONGODB_URI 会被当成分隔符，
+# 症状是"密码明明是对的却连不上库"，很难排查。
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: sayhi-mongo
+    restart: unless-stopped
+    # 注意：这里不要加 --bind_ip 127.0.0.1。
+    # docker 的端口发布是 DNAT 到容器网卡 IP（不是 127.0.0.1），
+    # mongod 只监听回环的话，宿主根本连不进去。
+    # 对外隔离交给下面的 ports 绑定回环即可。
+    command: ["mongod", "--wiredTigerCacheSizeGB", "0.25"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: sayhi
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?请先在 deploy/.env 里设置 MONGO_PASSWORD}
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - sayhi-mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  sayhi-mongo-data:
