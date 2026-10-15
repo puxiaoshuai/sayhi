@@ -1,0 +1,78 @@
+<view class="page-wrap" wx:if="{{scene}}">
+  <!-- 场景头（详情页只呈现单一场景，切换场景回列表页选） -->
+  <view class="scene-detail-header">
+    <text class="detail-emoji">{{scene.emoji}}</text>
+    <view class="detail-title-wrap">
+      <text class="detail-name">{{scene.name}}</text>
+      <text class="detail-sub">{{scene.vocabulary.length}} 个物品词汇 · {{scene.expressions.length}} 句常用表达</text>
+    </view>
+  </view>
+
+  <!-- 物品词汇 -->
+  <view class="card">
+    <view class="card-header">
+      <text class="card-title">📖 物品词汇</text>
+      <text class="header-hint">点击英文可朗读</text>
+    </view>
+    <view class="vocab-item" wx:for="{{scene.vocabulary}}" wx:key="word">
+      <view class="vocab-top">
+        <view
+          class="vocab-clickable"
+          bindtap="speakWord"
+          data-word="{{item.word}}"
+        >
+          <text class="vocab-word">{{item.word}}</text>
+          <text class="vocab-phonetic"> {{item.phonetic}}</text>
+        </view>
+        <text
+          class="star-btn {{item.favorited ? 'active' : ''}}"
+          catchtap="favWord"
+          data-index="{{index}}"
+        >⭐</text>
+      </view>
+      <view class="vocab-meaning">{{item.pos}} {{item.meaning}}</view>
+    </view>
+  </view>
+
+  <!-- 常用沟通语句 -->
+  <view class="card">
+    <view class="card-header">
+      <text class="card-title">💬 常用沟通语句</text>
+      <text class="header-hint">点单词单独读 · 🔊 读整句</text>
+    </view>
+    <view class="expr-item" wx:for="{{scene.expressions}}" wx:key="en">
+      <view class="vocab-top">
+        <view class="expr-en">
+          <!-- 句内单词点读（见技术方案 6.5） -->
+          <block wx:for="{{item.segs}}" wx:for-item="seg" wx:for-index="innerIndex" wx:key="index">
+            <text>{{seg.pre}}</text>
+            <text
+              wx:if="{{seg.word}}"
+              class="word-tap {{seg.speaking ? 'word-speaking' : ''}}"
+              catchtap="onWordTap"
+              data-exp-index="{{index}}"
+              data-seg-index="{{innerIndex}}"
+              data-word="{{seg.word}}"
+            >{{seg.word}}</text>
+            <text>{{seg.post}}</text>
+          </block>
+        </view>
+        <view class="expr-btns">
+          <text class="speak-btn" catchtap="speakExpr" data-index="{{index}}">🔊</text>
+          <text
+            class="star-btn {{item.favorited ? 'active' : ''}}"
+            catchtap="favExpr"
+            data-index="{{index}}"
+          >⭐</text>
+        </view>
+      </view>
+      <view class="expr-zh">{{item.zh}}</view>
+      <view class="expr-situ">💬 {{item.situation}}</view>
+    </view>
+  </view>
+</view>
+
+<!-- 加载中（首次访问该场景且未预热时，后端生成约需 3~5 秒） -->
+<view class="loading-wrap" wx:elif="{{loading}}">
+  <view class="loading-text">📚 内容准备中（首次生成约需数秒）...</view>
+</view>

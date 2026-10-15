@@ -1,0 +1,33 @@
+{
+  "pages": [
+    "pages/lock/lock",
+    "pages/home/home",
+    "pages/scenes/scenes",
+    "pages/scene-detail/scene-detail",
+    "pages/favorites/favorites"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTitleText": "SayHi",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F5F7FA",
+    "backgroundTextStyle": "dark"
+  },
+  "permission": {
+    "scope.record": {
+      "desc": "用于把你的中文语音转成文字，进行英文翻译拆解"
+    }
+  },
+  "tabBar": {
+    "color": "#94a3b8",
+    "selectedColor": "#2F80ED",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/home/home", "text": "🌐 翻译" },
+      { "pagePath": "pages/scenes/scenes", "text": "🏠 场景" },
+      { "pagePath": "pages/favorites/favorites", "text": "📖 生词本" }
+    ]
+  },
+  "sitemapLocation": "sitemap.json"
+}

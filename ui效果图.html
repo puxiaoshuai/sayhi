@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能英语外教 - 原型（翻译 / 场景学习 / 收藏）</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #0f172a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* 模拟手机外壳容器 */
+        .phone-container {
+            width: 390px;
+            height: 844px;
+            background-color: #F5F7FA;
+            border-radius: 44px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 12px #1e293b;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 微信小程序顶部状态栏 */
+        .status-bar {
+            height: 44px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+            background-color: #ffffff;
+            z-index: 10;
+        }
+
+        /* 微信小程序导航栏 */
+        .nav-bar {
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            background-color: #ffffff;
+            border-bottom: 1px solid #f1f5f9;
+            position: relative;
+            z-index: 10;
+        }
+
+        .nav-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0f172a;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .wx-capsule {
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            height: 30px;
+            padding: 0 10px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(4px);
+            font-size: 13px;
+            color: #333;
+            letter-spacing: 1px;
+        }
+
+        /* 页面主体容器 */
+        .page-content {
+            flex: 1;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .page {
+            display: none;
+            padding: 16px;
+            flex-direction: column;
+            gap: 16px;
+            min-height: 100%;
+        }
+
+        .page.active {
+            display: flex;
+            animation: fadeIn 0.25s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 底部 TabBar 导航栏 (3个Tab) */
+        .tab-bar {
+            height: 64px;
+            background: #ffffff;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: 12px;
+            z-index: 10;
+        }
+
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            color: #94a3b8;
+            font-size: 11px;
+            cursor: pointer;
+            width: 33.33%;
+            height: 100%;
+            transition: color 0.2s;
+        }
+
+        .tab-item.active {
+            color: #2F80ED;
+            font-weight: 600;
+        }
+
+        .tab-icon {
+            font-size: 20px;
+        }
+
+        /* ---------------- [页面 1: 首页通用样式] ---------------- */
+        .input-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        }
+
+        .textarea-box {
+            width: 100%;
+            height: 85px;
+            border: none;
+            outline: none;
+            resize: none;
+            font-size: 15px;
+            color: #1e293b;
+            background: transparent;
+            line-height: 1.5;
+        }
+
+        .input-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 10px;
+            margin-top: 4px;
+        }
+
+        .translate-btn {
+            background: linear-gradient(135deg, #2F80ED 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(47, 128, 237, 0.3);
+        }
+
+        /* 语音输入麦克风按钮（录音中呈红色脉冲） */
+        .mic-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: #f1f5f9;
+            font-size: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .mic-btn.listening {
+            background: #ef4444;
+            animation: micPulse 1.2s infinite;
+        }
+        @keyframes micPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            position: relative;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .translation-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0f172a;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-chip {
+            background: #f1f5f9;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #475569;
+            cursor: pointer;
+        }
+
+        .star-btn {
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #cbd5e1;
+        }
+        .star-btn.active { color: #f59e0b; }
+
+        .vocab-item, .pattern-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #f8fafc;
+        }
+        .vocab-top { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .vocab-word { font-weight: 600; color: #1e293b; font-size: 14px; }
+        .vocab-phonetic { font-size: 12px; color: #94a3b8; }
+        .vocab-meaning { font-size: 13px; color: #475569; }
+        .pattern-title { font-weight: 600; color: #2F80ED; font-size: 14px; margin-bottom: 4px; }
+        .pattern-desc { font-size: 13px; color: #334155; margin-bottom: 6px; }
+        .pattern-example {
+            font-size: 12px; color: #64748b; background: #f8fafc;
+            padding: 6px 10px; border-radius: 6px; border-left: 3px solid #2F80ED;
+        }
+
+        /* ---------------- [页面 2: 场景学习页] ---------------- */
+        .scene-hero {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            border-radius: 20px;
+            padding: 22px 20px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.25);
+        }
+        .scene-hero-title { font-size: 18px; font-weight: 700; }
+        .scene-hero-desc { font-size: 12px; opacity: 0.85; line-height: 1.5; }
+
+        .scene-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .scene-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 16px 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-start;
+            transition: transform 0.15s;
+        }
+        .scene-card:active { transform: scale(0.97); }
+        .scene-emoji { font-size: 26px; line-height: 1; }
+        .scene-name { font-size: 15px; font-weight: 600; color: #0f172a; }
+        .scene-meta { font-size: 11px; color: #94a3b8; }
+
+        .scene-locked {
+            background: #ffffff;
+            border: 1px dashed #e2e8f0;
+            border-radius: 16px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #94a3b8;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .scene-back {
+            font-size: 14px;
+            color: #8b5cf6;
+            cursor: pointer;
+            font-weight: 500;
+            padding: 2px 0;
+            align-self: flex-start;
+        }
+        .scene-detail-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .scene-detail-header .scene-emoji { font-size: 30px; }
+        .scene-detail-sub { font-size: 12px; color: #94a3b8; font-weight: 400; margin-left: 4px; }
+
+        .scene-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+        .scene-chip {
+            background: #f1f5f9;
+            color: #475569;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 14px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .scene-chip.active { background: #ede9fe; color: #7c3aed; font-weight: 600; }
+
+        .expr-item { padding: 12px 0; border-bottom: 1px solid #f8fafc; }
+        .expr-item:last-child { border-bottom: none; }
+        .expr-en { font-weight: 600; color: #1e293b; font-size: 14px; line-height: 1.45; }
+        .expr-zh { font-size: 13px; color: #475569; margin-top: 4px; }
+        .expr-situ {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 6px;
+            background: #faf5ff;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border-left: 3px solid #8b5cf6;
+            display: inline-block;
+        }
+
+        .tag-scene { background: #ecfdf5; color: #10b981; }
+        .tag-word { background: #f1f5f9; color: #64748b; }
+
+        /* 可朗读元素（带 data-speak 属性，点击即发音） */
+        [data-speak] { cursor: pointer; }
+
+        /* 句内单词点读：虚线下划线提示可点，朗读时紫色高亮 */
+        .word-tap {
+            border-bottom: 1px dashed rgba(139, 92, 246, 0.45);
+            padding: 0 1px;
+            border-radius: 2px;
+            transition: background 0.15s, color 0.15s;
+        }
+        .word-tap:active { color: #7c3aed; }
+        .word-tap.speaking { background: #ede9fe; color: #7c3aed; border-bottom-style: solid; }
+
+        /* ---------------- [页面 3: 收藏页] ---------------- */
+        .search-box {
+            background: #ffffff; border-radius: 12px; padding: 10px 14px;
+            display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .search-input { border: none; outline: none; width: 100%; font-size: 14px; color: #334155; }
+        .fav-card {
+            background: #ffffff; border-radius: 16px; padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 8px;
+        }
+        .fav-cn { font-size: 13px; color: #64748b; }
+        .fav-en { font-size: 15px; font-weight: 600; color: #0f172a; line-height: 1.4; }
+        .fav-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+        .tag { background: #eff6ff; color: #2F80ED; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+        .fav-footer { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #94a3b8; margin-top: 6px; border-top: 1px solid #f8fafc; padding-top: 8px; }
+
+        /* Toast 轻提示 */
+        .toast {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: rgba(15, 23, 42, 0.85);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+        .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+        /* ---------------- [密码确认页 · 应用锁] ---------------- */
+        .lock-screen {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 100%);
+            z-index: 60; /* 高于导航栏/TabBar，低于 Toast，便于显示错误提示 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            padding: 32px;
+        }
+        .lock-icon { font-size: 48px; }
+        .lock-title { font-size: 20px; font-weight: 700; color: #ffffff; }
+        .lock-desc { font-size: 12px; color: rgba(255, 255, 255, 0.6); }
+        .lock-input {
+            width: 100%;
+            max-width: 260px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-size: 15px;
+            outline: none;
+            text-align: center;
+            letter-spacing: 4px;
+        }
+        .lock-input::placeholder { color: rgba(255, 255, 255, 0.35); letter-spacing: normal; }
+        .lock-btn {
+            width: 100%;
+            max-width: 260px;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+        }
+        .lock-tip { font-size: 11px; color: rgba(255, 255, 255, 0.4); margin-top: 8px; }
+    </style>
+</head>
+<body>
+
+    <div class="phone-container">
+        <!-- 状态栏 -->
+        <div class="status-bar">
+            <span>10:37</span>
+            <div style="display: flex; gap: 6px; font-size: 12px;">
+                <span>5G</span>
+                <span>🔋</span>
+            </div>
+        </div>
+
+        <!-- 导航栏 -->
+        <div class="nav-bar">
+            <span style="font-size: 16px; cursor: pointer;" onclick="navBack()">‹</span>
+            <span class="nav-title" id="pageTitle">智能英语外教</span>
+            <div class="wx-capsule">
+                <span>•••</span>
+            </div>
+        </div>
+
+        <!-- 页面视图区域 -->
+        <div class="page-content">
+            
+            <!-- ================= PAGE 1: 首页 (翻译与解析) ================= -->
+            <div class="page active" id="page-home">
+                <div class="input-card">
+                    <textarea id="inputText" class="textarea-box" maxlength="100" oninput="updateCharCount()"
+                              placeholder="请输入或点击 🎤 说出你想表达的中文...">为了保持健康，我决定每天坚持跑步。</textarea>
+                    <div class="input-footer">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput(this)"
+                                    title="语音输入（正式版使用微信同声传译插件识别）">🎤</button>
+                            <span style="font-size: 12px; color: #94a3b8;" id="charCount">19/100</span>
+                        </div>
+                        <button class="translate-btn" onclick="handleTranslate()">🚀 智能翻译与拆解</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">✨ 地道英文翻译</span>
+                        <button class="star-btn active" onclick="toggleStar(this)">⭐</button>
+                    </div>
+                    <div class="translation-text word-split" title="点击句中单词可单独朗读">
+                        "In order to stay healthy, I decided to stick to running every day."
+                    </div>
+                    <div class="card-actions">
+                        <button class="action-chip" data-speak="In order to stay healthy, I decided to stick to running every day.">🔊 朗读发音</button>
+                        <button class="action-chip" onclick="showToast('📋 已复制英文到剪贴板')">📋 复制英文</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><span class="card-title">📖 重点词汇与短语</span></div>
+                    <div class="vocab-item">
+                        <div class="vocab-top">
+                            <span class="vocab-word">stay healthy</span>
+                            <span class="vocab-phonetic">/steɪ ˈhelθi/</span>
+                        </div>
+                        <div class="vocab-meaning">短语 · 保持健康</div>
+                    </div>
+                    <div class="vocab-item">
+                        <div class="vocab-top">
+                            <span class="vocab-word">stick to</span>
+                            <span class="vocab-phonetic">/stɪk tuː/</span>
+                        </div>
+                        <div class="vocab-meaning">短语 · 坚持（做某事）</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= PAGE 2: 场景学习 (场景列表 → 场景详情) ================= -->
+            <div class="page" id="page-scenes">
+                <!-- 视图 A: 场景列表 -->
+                <div id="scene-list-view" style="display: flex; flex-direction: column; gap: 16px;">
+                    <div class="scene-hero">
+                        <div style="font-size: 30px;">🏠</div>
+                        <div class="scene-hero-title">在家 · 场景化学习</div>
+                        <div class="scene-hero-desc">按房间逛一逛，认识身边物品的英文名，学几句真正会在家里说的话</div>
+                    </div>
+
+                    <div class="scene-grid">
+                        <div class="scene-card" onclick="openScene('kitchen')">
+                            <span class="scene-emoji">🍳</span>
+                            <span class="scene-name">厨房</span>
+                            <span class="scene-meta">物品词汇 · 常用语句</span>
+                        </div>
+                        <div class="scene-card" onclick="openScene('living')">
+                            <span class="scene-emoji">🛋️</span>
+                            <span class="scene-name">客厅</span>
+                            <span class="scene-meta">物品词汇 · 常用语句</span>
+                        </div>
+                        <div class="scene-card" onclick="openScene('bedroom')">
+                            <span class="scene-emoji">🛏️</span>
+                            <span class="scene-name">卧室</span>
+                            <span class="scene-meta">物品词汇 · 常用语句</span>
+                        </div>
+                        <div class="scene-card" onclick="openScene('bathroom')">
+                            <span class="scene-emoji">🚿</span>
+                            <span class="scene-name">卫生间</span>
+                            <span class="scene-meta">物品词汇 · 常用语句</span>
+                        </div>
+                    </div>
+
+                    <!-- 二期功能预告（对应技术方案第八章） -->
+                    <div class="scene-locked" onclick="showToast('📷 拍照识物为二期功能，敬请期待')">
+                        <span style="font-size: 20px;">📷</span>
+                        <span>拍照识物 · 对准物品即学英文（二期上线）</span>
+                    </div>
+                </div>
+
+                <!-- 视图 B: 场景详情（由 openScene() 动态渲染） -->
+                <div id="scene-detail-view" style="display: none; flex-direction: column; gap: 16px;">
+                    <div class="scene-back" onclick="backToScenes()">‹ 返回场景列表</div>
+                    <div class="scene-detail-header" id="sceneDetailHeader"></div>
+                    <div class="scene-chips" id="sceneChips"></div>
+                    <div class="card" id="sceneVocabCard"></div>
+                    <div class="card" id="sceneExprCard"></div>
+                </div>
+            </div>
+
+            <!-- ================= PAGE 3: 收藏夹 (生词本) ================= -->
+            <div class="page" id="page-favorites">
+                <div class="search-box">
+                    <span>🔍</span>
+                    <input type="text" class="search-input" placeholder="搜索已收藏的句子或词汇...">
+                </div>
+
+                <!-- 来源：翻译查询 (sourceType: translation) -->
+                <div class="fav-card">
+                    <div class="fav-cn">中文：为了保持健康，我决定每天坚持跑步。</div>
+                    <div class="fav-en word-split" data-speak="In order to stay healthy, I decided to stick to running every day." title="点击单词单独朗读 · 点击标点/空白处读整句">"In order to stay healthy, I decided to stick to running every day."</div>
+                    <div class="fav-tags">
+                        <span class="tag">翻译收藏</span>
+                        <span class="tag tag-word">stay healthy</span>
+                        <span class="tag tag-word">stick to</span>
+                    </div>
+                    <div class="fav-footer">
+                        <span>🕒 2026-10-14 10:30</span>
+                        <span style="color: #ef4444; cursor: pointer;" onclick="deleteFav(this)">移除</span>
+                    </div>
+                </div>
+
+                <!-- 来源：场景词汇 (sourceType: scene_word) -->
+                <div class="fav-card">
+                    <div class="fav-cn">厨房 · 冰箱</div>
+                    <div class="fav-en" data-speak="refrigerator" title="点击朗读">refrigerator <span style="font-weight: 400; color: #94a3b8; font-size: 13px;">/rɪˈfrɪdʒəreɪtər/ · n. 冰箱</span></div>
+                    <div class="fav-tags">
+                        <span class="tag tag-scene">场景词汇</span>
+                        <span class="tag tag-word">在家 · 厨房</span>
+                    </div>
+                    <div class="fav-footer">
+                        <span>🕒 2026-10-14 11:02</span>
+                        <span style="color: #ef4444; cursor: pointer;" onclick="deleteFav(this)">移除</span>
+                    </div>
+                </div>
+
+                <!-- 来源：场景语句 (sourceType: scene_expression) -->
+                <div class="fav-card">
+                    <div class="fav-cn">中文：能用微波炉热一下剩菜吗？</div>
+                    <div class="fav-en word-split" data-speak="Could you zap the leftovers in the microwave?" title="点击单词单独朗读 · 点击标点/空白处读整句">"Could you zap the leftovers in the microwave?"</div>
+                    <div class="fav-tags">
+                        <span class="tag tag-scene">场景语句</span>
+                        <span class="tag tag-word">在家 · 厨房</span>
+                    </div>
+                    <div class="fav-footer">
+                        <span>🕒 2026-10-14 11:05</span>
+                        <span style="color: #ef4444; cursor: pointer;" onclick="deleteFav(this)">移除</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 底部 TabBar 导航栏 (3个Tab) -->
+        <div class="tab-bar">
+            <div class="tab-item active" onclick="switchTab('home', '智能英语外教', this)">
+                <span class="tab-icon">🌐</span>
+                <span>翻译与解析</span>
+            </div>
+            <div class="tab-item" onclick="switchTab('scenes', '场景化学习', this)">
+                <span class="tab-icon">🏠</span>
+                <span>场景学习</span>
+            </div>
+            <div class="tab-item" onclick="switchTab('favorites', '我的生词收藏夹', this)">
+                <span class="tab-icon">📖</span>
+                <span>生词收藏本</span>
+            </div>
+        </div>
+
+        <!-- 密码确认页：启动第一道门，通过后 30 分钟内免输（见技术方案 6.6） -->
+        <div class="lock-screen" id="lockScreen">
+            <div class="lock-icon">🔒</div>
+            <div class="lock-title">智能英语外教</div>
+            <div class="lock-desc">个人使用 · 请输入访问密码</div>
+            <input class="lock-input" id="lockInput" type="password" placeholder="请输入访问密码"
+                   onkeydown="if (event.key === 'Enter') unlockApp()">
+            <button class="lock-btn" onclick="unlockApp()">验证并进入</button>
+            <div class="lock-tip">验证通过后 30 分钟内免重复输入（原型演示密码：1234）</div>
+        </div>
+
+        <!-- 轻提示 Toast -->
+        <div id="toast" class="toast">操作成功</div>
+    </div>
+
+    <script>
+        // ===== 应用锁（原型用 localStorage 模拟 30 分钟时效；实际调用 POST /api/auth/verify-password，见技术方案 6.6） =====
+        const LOCK_STORAGE_KEY = 'sayhi_pass_expires_at';
+
+        function unlockApp() {
+            const input = document.getElementById('lockInput');
+            if (input.value === '1234') { // 原型模拟校验；实际由后端比对 .env 中的密码哈希并签发 30 分钟 JWT
+                localStorage.setItem(LOCK_STORAGE_KEY, String(Date.now() + 30 * 60 * 1000));
+                document.getElementById('lockScreen').style.display = 'none';
+                input.value = '';
+                showToast('🔓 验证通过，30 分钟内免输');
+            } else {
+                showToast('❌ 密码错误，请重试');
+            }
+        }
+
+        // 启动检查：30 分钟时效内（含重新打开页面/冷启动）直接跳过密码页
+        if (Number(localStorage.getItem(LOCK_STORAGE_KEY)) > Date.now()) {
+            document.getElementById('lockScreen').style.display = 'none';
+        }
+
+        // Tab 页面切换逻辑
+        function switchTab(pageId, title, tabEl) {
+            document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+            tabEl.classList.add('active');
+
+            document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+            document.getElementById(`page-${pageId}`).classList.add('active');
+
+            document.getElementById('pageTitle').textContent = title;
+        }
+
+        // ===== 场景化学习（原型演示数据；实际由后端 LLM 生成一次后入库，前端读库渲染） =====
+        const SCENES = {
+            kitchen: {
+                emoji: '🍳', name: '厨房',
+                vocab: [
+                    { word: 'refrigerator', phonetic: '/rɪˈfrɪdʒəreɪtər/', pos: 'n.', meaning: '冰箱' },
+                    { word: 'microwave', phonetic: '/ˈmaɪkrəweɪv/', pos: 'n.', meaning: '微波炉' },
+                    { word: 'rice cooker', phonetic: '/raɪs ˈkʊkər/', pos: 'n.', meaning: '电饭煲' },
+                    { word: 'cutting board', phonetic: '/ˈkʌtɪŋ bɔːrd/', pos: 'n.', meaning: '砧板' },
+                    { word: 'faucet', phonetic: '/ˈfɔːsɪt/', pos: 'n.', meaning: '水龙头' },
+                    { word: 'leftovers', phonetic: '/ˈleftoʊvərz/', pos: 'n.', meaning: '剩饭剩菜' },
+                ],
+                exprs: [
+                    { en: "Could you zap the leftovers in the microwave?", zh: '能用微波炉热一下剩菜吗？', situ: '请家人帮忙热饭' },
+                    { en: "Dinner's ready! Come and eat while it's hot.", zh: '饭好了！趁热来吃。', situ: '开饭时招呼家人' },
+                    { en: "Careful—the pan is still hot.", zh: '小心，锅还烫着呢。', situ: '提醒家人别烫到' },
+                ],
+            },
+            living: {
+                emoji: '🛋️', name: '客厅',
+                vocab: [
+                    { word: 'sofa', phonetic: '/ˈsoʊfə/', pos: 'n.', meaning: '沙发' },
+                    { word: 'remote control', phonetic: '/rɪˈmoʊt kənˈtroʊl/', pos: 'n.', meaning: '遥控器' },
+                    { word: 'coffee table', phonetic: '/ˈkɔːfi ˈteɪbl/', pos: 'n.', meaning: '茶几' },
+                    { word: 'cushion', phonetic: '/ˈkʊʃən/', pos: 'n.', meaning: '靠垫' },
+                    { word: 'outlet', phonetic: '/ˈaʊtlət/', pos: 'n.', meaning: '插座' },
+                    { word: 'air conditioner', phonetic: '/er kənˈdɪʃənər/', pos: 'n.', meaning: '空调' },
+                ],
+                exprs: [
+                    { en: "Where's the remote? I can't find it anywhere.", zh: '遥控器呢？我到处都找不到。', situ: '找遥控器时的日常抱怨' },
+                    { en: "Can you turn on the AC? It's boiling in here.", zh: '能把空调打开吗？热死了。', situ: '天热时请家人开空调' },
+                    { en: "Plug it into the outlet by the sofa.", zh: '插到沙发旁边的插座上。', situ: '指示充电 / 插电位置' },
+                ],
+            },
+            bedroom: {
+                emoji: '🛏️', name: '卧室',
+                vocab: [
+                    { word: 'pillow', phonetic: '/ˈpɪloʊ/', pos: 'n.', meaning: '枕头' },
+                    { word: 'blanket', phonetic: '/ˈblæŋkɪt/', pos: 'n.', meaning: '毯子' },
+                    { word: 'mattress', phonetic: '/ˈmætrɪs/', pos: 'n.', meaning: '床垫' },
+                    { word: 'alarm clock', phonetic: '/əˈlɑːrm klɑːk/', pos: 'n.', meaning: '闹钟' },
+                    { word: 'wardrobe', phonetic: '/ˈwɔːrdroʊb/', pos: 'n.', meaning: '衣柜' },
+                    { word: 'nightstand', phonetic: '/ˈnaɪtstænd/', pos: 'n.', meaning: '床头柜' },
+                ],
+                exprs: [
+                    { en: "Set the alarm for seven—I have an early meeting.", zh: '把闹钟定到七点，我明天有早会。', situ: '睡前的嘱托' },
+                    { en: "I'm beat. I'm calling it a night.", zh: '累瘫了，我要睡了。', situ: '准备睡觉时说' },
+                    { en: "Can you grab me a blanket? It's a bit chilly.", zh: '帮我拿条毯子好吗？有点冷。', situ: '请家人帮忙拿东西' },
+                ],
+            },
+            bathroom: {
+                emoji: '🚿', name: '卫生间',
+                vocab: [
+                    { word: 'shower', phonetic: '/ˈʃaʊər/', pos: 'n.', meaning: '淋浴' },
+                    { word: 'towel', phonetic: '/ˈtaʊəl/', pos: 'n.', meaning: '毛巾' },
+                    { word: 'toothpaste', phonetic: '/ˈtuːθpeɪst/', pos: 'n.', meaning: '牙膏' },
+                    { word: 'hair dryer', phonetic: '/her ˈdraɪər/', pos: 'n.', meaning: '吹风机' },
+                    { word: 'toilet paper', phonetic: '/ˈtɔɪlət ˈpeɪpər/', pos: 'n.', meaning: '卷纸' },
+                    { word: 'sink', phonetic: '/sɪŋk/', pos: 'n.', meaning: '洗手池' },
+                ],
+                exprs: [
+                    { en: "We're out of toilet paper—add it to the shopping list.", zh: '卷纸用完了，加进购物清单吧。', situ: '发现日用品用完时' },
+                    { en: "I'm taking a quick shower.", zh: '我快速冲个澡。', situ: '告知家人占用卫生间' },
+                    { en: "Don't forget to flush.", zh: '别忘了冲马桶。', situ: '提醒家人（常对小朋友说）' },
+                ],
+            },
+        };
+
+        let currentScene = null;
+
+        function openScene(key) {
+            currentScene = key;
+            const scene = SCENES[key];
+
+            document.getElementById('scene-list-view').style.display = 'none';
+            document.getElementById('scene-detail-view').style.display = 'flex';
+            document.getElementById('pageTitle').textContent = `${scene.name} · 在家场景`;
+
+            document.getElementById('sceneDetailHeader').innerHTML = `
+                <span class="scene-emoji">${scene.emoji}</span>
+                <span>${scene.name}<span class="scene-detail-sub">${scene.vocab.length} 个物品词汇 · ${scene.exprs.length} 句常用表达</span></span>
+            `;
+
+            document.getElementById('sceneChips').innerHTML = Object.keys(SCENES).map(k => `
+                <button class="scene-chip ${k === key ? 'active' : ''}" onclick="openScene('${k}')">${SCENES[k].emoji} ${SCENES[k].name}</button>
+            `).join('');
+
+            document.getElementById('sceneVocabCard').innerHTML = `
+                <div class="card-header"><span class="card-title">📖 物品词汇</span><span style="font-size: 11px; color: #cbd5e1;">点击英文可朗读</span></div>
+                ${scene.vocab.map(v => `
+                    <div class="vocab-item">
+                        <div class="vocab-top">
+                            <span data-speak="${v.word}" title="点击朗读"><span class="vocab-word">${v.word}</span>&nbsp;&nbsp;<span class="vocab-phonetic">${v.phonetic}</span></span>
+                            <button class="star-btn" onclick="sceneStar(this, '${v.word}')">⭐</button>
+                        </div>
+                        <div class="vocab-meaning">${v.pos} ${v.meaning}</div>
+                    </div>
+                `).join('')}
+            `;
+
+            document.getElementById('sceneExprCard').innerHTML = `
+                <div class="card-header"><span class="card-title">💬 常用沟通语句</span><span style="font-size: 11px; color: #cbd5e1;">点单词单独读 · 🔊 读整句</span></div>
+                ${scene.exprs.map(e => `
+                    <div class="expr-item">
+                        <div class="vocab-top">
+                            <span class="expr-en" title="点击句中单词可单独朗读">${wrapWords(e.en)}</span>
+                            <span style="display: flex; gap: 2px; flex-shrink: 0;">
+                                <button class="star-btn" data-speak="${e.en}" title="朗读整句" style="font-size: 16px;">🔊</button>
+                                <button class="star-btn" onclick="sceneStar(this, '常用语句')">⭐</button>
+                            </span>
+                        </div>
+                        <div class="expr-zh">${e.zh}</div>
+                        <div class="expr-situ">💬 ${e.situ}</div>
+                    </div>
+                `).join('')}
+            `;
+
+            document.querySelector('.page-content').scrollTop = 0;
+        }
+
+        function backToScenes() {
+            currentScene = null;
+            document.getElementById('scene-detail-view').style.display = 'none';
+            document.getElementById('scene-list-view').style.display = 'flex';
+            document.getElementById('pageTitle').textContent = '场景化学习';
+            document.querySelector('.page-content').scrollTop = 0;
+        }
+
+        function sceneStar(el, label) {
+            el.classList.toggle('active');
+            showToast(el.classList.contains('active') ? `⭐ 已加入生词本：${label}` : '❌ 已取消收藏');
+        }
+
+        function navBack() {
+            // 目前仅场景学习页存在二级视图；其余页面导航返回键为装饰
+            if (document.getElementById('scene-detail-view').style.display !== 'none') {
+                backToScenes();
+            }
+        }
+
+        function handleTranslate() {
+            const btn = document.querySelector('.translate-btn');
+            btn.textContent = '⏳ AI 思考中...';
+            btn.style.opacity = '0.7';
+            setTimeout(() => {
+                btn.textContent = '🚀 智能翻译与拆解';
+                btn.style.opacity = '1';
+                showToast('✨ 翻译与解析完成！');
+            }, 600);
+        }
+
+        function deleteFav(el) {
+            const card = el.closest('.fav-card');
+            card.style.transition = 'all 0.3s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                card.remove();
+                showToast('🗑️ 已从生词本移除');
+            }, 300);
+        }
+
+        function toggleStar(el) {
+            el.classList.toggle('active');
+            showToast(el.classList.contains('active') ? '⭐ 已加入生词本' : '❌ 已取消收藏');
+        }
+
+        // ===== 语音朗读：原型使用浏览器 speechSynthesis；正式小程序将替换为微信同声传译插件 WechatSI（见技术方案 6.5） =====
+        function speak(text) {
+            if (!('speechSynthesis' in window)) {
+                showToast('当前浏览器不支持语音合成');
+                return;
+            }
+            speechSynthesis.cancel(); // 连点切换：先停掉正在播放的上一段
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'en-US';
+            u.rate = 0.92; // 语速稍慢，便于听清
+            speechSynthesis.speak(u);
+        }
+
+        // 句内单词点读：将英文句子按词拆为可点区域（撇号/连字符词不拆分，自动剥离首尾标点）
+        function wrapWords(sentence) {
+            return sentence.split(/(\s+)/).map(part => {
+                const m = part.match(/^(\W*)([\w'-]+)(\W*)$/);
+                if (!m) return part; // 纯空白或全标点的片段原样保留
+                return `${m[1]}<span class="word-tap" data-speak="${m[2]}">${m[2]}</span>${m[3]}`;
+            }).join('');
+        }
+
+        // 页面加载时：给静态英文句子（翻译结果、收藏卡片）启用单词点读
+        document.querySelectorAll('.word-split').forEach(el => {
+            el.innerHTML = wrapWords(el.textContent.trim());
+        });
+
+        // 事件委托：所有带 data-speak 属性的元素点击即朗读（单词、整句、词汇、按钮统一处理），并高亮正在朗读的内容
+        document.addEventListener('click', (e) => {
+            const el = e.target.closest('[data-speak]');
+            if (el) {
+                speak(el.dataset.speak);
+                el.classList.add('speaking');
+                setTimeout(() => el.classList.remove('speaking'), 600);
+            }
+        });
+
+        // ===== 语音输入：原型优先用浏览器 Web Speech API（Chrome/Edge 可真实识别中文）；不支持时降级为模拟演示 =====
+        // 正式小程序将替换为微信同声传译插件的语音识别（getRecordRecognitionManager，见技术方案 6.5）
+        let voiceActive = false;
+        let recognition = null;
+
+        function toggleVoiceInput(btn) {
+            if (voiceActive) { stopVoiceInput(); return; }
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SR) {
+                recognition = new SR();
+                recognition.lang = 'zh-CN';
+                recognition.interimResults = true;   // 返回中间结果，实时回填输入框
+                recognition.continuous = false;
+                recognition.onresult = (e) => {
+                    let text = '';
+                    for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
+                    document.getElementById('inputText').value = text;
+                    updateCharCount();
+                };
+                recognition.onend = () => stopVoiceInput(); // 说完一段自动结束
+                recognition.onerror = () => { showToast('🎤 语音识别失败，请重试'); stopVoiceInput(); };
+                recognition.start();
+                voiceActive = true;
+                btn.classList.add('listening');
+                showToast('🎤 正在聆听，请说话...');
+            } else {
+                simulateVoiceInput(btn); // Firefox 等不支持时：模拟识别演示
+            }
+        }
+
+        function stopVoiceInput() {
+            voiceActive = false;
+            if (recognition) { recognition.onend = null; recognition.stop(); recognition = null; }
+            document.getElementById('micBtn').classList.remove('listening');
+        }
+
+        function simulateVoiceInput(btn) {
+            voiceActive = true;
+            btn.classList.add('listening');
+            showToast('🎤 正在聆听（模拟演示）...');
+            const demo = '今天有点累，想早点休息。';
+            const input = document.getElementById('inputText');
+            input.value = '';
+            let i = 0;
+            const timer = setInterval(() => {
+                input.value += demo[i++];
+                updateCharCount();
+                if (i >= demo.length) {
+                    clearInterval(timer);
+                    stopVoiceInput();
+                    showToast('✅ 识别完成，可编辑后翻译');
+                }
+            }, 180);
+        }
+
+        function updateCharCount() {
+            const input = document.getElementById('inputText');
+            document.getElementById('charCount').textContent = `${input.value.length}/100`;
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 1500);
+        }
+    </script>
+</body>
+</html>

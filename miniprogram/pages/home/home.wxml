@@ -1,0 +1,114 @@
+<view class="page-wrap">
+  <!-- 输入卡：文字 / 语音输入 -->
+  <view class="input-card">
+    <textarea
+      class="textarea-box"
+      maxlength="100"
+      placeholder="请输入或长按 🎤 说出你想表达的中文..."
+      value="{{inputText}}"
+      bindinput="onTextInput"
+    />
+    <view class="input-footer">
+      <text class="char-count">{{inputText.length || 0}}/100</text>
+      <button class="translate-btn" loading="{{loading}}" bindtap="translate">
+        🚀 智能翻译与拆解
+      </button>
+    </view>
+  </view>
+
+  <!-- 语音输入：右下角悬浮按钮，落在拇指自然可及的范围内。长按录入、松手结束、上滑取消 -->
+  <view
+    class="mic-fab {{listening ? 'listening' : ''}}"
+    bindtouchstart="onMicStart"
+    catchtouchmove="onMicMove"
+    bindtouchend="onMicEnd"
+    bindtouchcancel="onMicCancel"
+  >
+    <text class="mic-fab-icon">🎤</text>
+    <text class="mic-fab-label">{{listening ? '松开发送' : '按住说话'}}</text>
+  </view>
+
+  <!--
+    录音浮层：常驻 DOM，用 .show 切显隐（不走 wx:if，免得渲染时序和手势抢跑）。
+    触摸事件同时挂在浮层上：浮层盖到手指上方时会成为事件目标，
+    若不接住，move/end 就丢在半路 —— 表现就是松手停不下来、也取消不了。
+  -->
+  <view
+    class="record-mask {{listening ? 'show' : ''}}"
+    catchtouchmove="onMicMove"
+    bindtouchend="onMicEnd"
+    bindtouchcancel="onMicCancel"
+  >
+    <view class="record-panel {{recordCancel ? 'is-cancel' : ''}}">
+      <view class="record-bars">
+        <view class="rec-bar b1"></view>
+        <view class="rec-bar b2"></view>
+        <view class="rec-bar b3"></view>
+        <view class="rec-bar b4"></view>
+        <view class="rec-bar b5"></view>
+      </view>
+      <text class="record-time">{{recordSeconds}}″</text>
+    </view>
+    <view class="record-tip {{recordCancel ? 'is-cancel' : ''}}">
+      {{recordCancel ? '松开手指，取消发送' : '松开发送，上滑取消'}}
+    </view>
+  </view>
+
+  <!-- 翻译结果 -->
+  <view class="card" wx:if="{{result}}">
+    <view class="card-header">
+      <text class="card-title">✨ 地道英文翻译</text>
+      <view class="header-btns">
+        <text class="star-btn {{favorited ? 'active' : ''}}" bindtap="toggleFavorite">⭐</text>
+      </view>
+    </view>
+
+    <!-- 句内单词点读：点词读词（见技术方案 6.5） -->
+    <view class="translation-text">
+      <block wx:for="{{translationSegments}}" wx:key="index">
+        <text>{{item.pre}}</text>
+        <text
+          wx:if="{{item.word}}"
+          class="word-tap {{item.speaking ? 'word-speaking' : ''}}"
+          catchtap="onWordTap"
+          data-word="{{item.word}}"
+          data-index="{{index}}"
+        >{{item.word}}</text>
+        <text>{{item.post}}</text>
+      </block>
+    </view>
+
+    <view class="card-actions">
+      <button class="action-chip" bindtap="speakTranslation">🔊 朗读整句</button>
+    </view>
+  </view>
+
+  <!-- 重点词汇 -->
+  <view class="card" wx:if="{{result.vocabulary.length}}">
+    <view class="card-header">
+      <text class="card-title">📖 重点词汇与短语</text>
+      <text class="header-hint">点击单词可朗读</text>
+    </view>
+    <view class="vocab-item" wx:for="{{result.vocabulary}}" wx:key="word">
+      <view class="vocab-top">
+        <view class="word-clickable" bindtap="onVocabTap" data-word="{{item.word}}">
+          <text class="vocab-word">{{item.word}}</text>
+          <text class="vocab-phonetic"> {{item.phonetic}}</text>
+        </view>
+      </view>
+      <view class="vocab-meaning">{{item.pos}} {{item.meaning}}</view>
+    </view>
+  </view>
+
+  <!-- 核心句型 -->
+  <view class="card" wx:if="{{result.patterns.length}}">
+    <view class="card-header">
+      <text class="card-title">💡 核心句型</text>
+    </view>
+    <view class="pattern-item" wx:for="{{result.patterns}}" wx:key="pattern">
+      <view class="pattern-title" bindtap="onVocabTap" data-word="{{item.example}}">{{item.pattern}}</view>
+      <view class="pattern-desc">{{item.explanation}}</view>
+      <view class="pattern-example">例：{{item.example}}</view>
+    </view>
+  </view>
+</view>

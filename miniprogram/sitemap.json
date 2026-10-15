@@ -1,0 +1,9 @@
+{
+  "desc": "个人使用小程序，无需被索引",
+  "rules": [
+    {
+      "action": "disallow",
+      "page": "*"
+    }
+  ]
+}

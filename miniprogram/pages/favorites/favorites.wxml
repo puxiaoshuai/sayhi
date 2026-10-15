@@ -1,0 +1,68 @@
+<view class="page-wrap">
+  <!-- 搜索（本地过滤） -->
+  <view class="search-box">
+    <text>🔍</text>
+    <input
+      class="search-input"
+      placeholder="搜索已收藏的句子或词汇..."
+      value="{{keyword}}"
+      bindinput="onSearch"
+    />
+  </view>
+
+  <!-- 空态（加载中不显示，免得闪一下空文案） -->
+  <view class="empty-wrap" wx:if="{{!list.length && !loading}}">
+    <text class="empty-text">{{keyword ? '没有匹配的收藏' : '还没有收藏，去翻译页或场景页逛逛吧'}}</text>
+  </view>
+
+  <!-- 收藏列表（服务端游标分页，触底追加） -->
+  <view class="fav-card" wx:for="{{list}}" wx:key="_id">
+    <view class="fav-cn">{{item.sourceText}}</view>
+
+    <!-- 两级点读：句子点词读词 + 右侧按钮读整句；词汇型整块点读（见技术方案 6.5） -->
+    <view class="fav-en-row">
+      <view
+        wx:if="{{item.segs}}"
+        class="fav-en"
+        bindlongpress="speakWhole"
+        data-fav-index="{{index}}"
+        data-en="{{item.translation}}"
+      >
+        <block wx:for="{{item.segs}}" wx:for-item="seg" wx:for-index="segIdx" wx:key="index">
+          <text>{{seg.pre}}</text>
+          <text
+            wx:if="{{seg.word}}"
+            class="word-tap {{seg.speaking ? 'word-speaking' : ''}}"
+            catchtap="onWordTap"
+            data-fav-index="{{index}}"
+            data-seg-index="{{segIdx}}"
+            data-word="{{seg.word}}"
+          >{{seg.word}}</text>
+          <text>{{seg.post}}</text>
+        </block>
+      </view>
+      <view wx:else class="fav-en" bindtap="speakWhole" data-fav-index="{{index}}" data-en="{{item.translation}}">{{item.translation}}</view>
+
+      <text
+        class="speak-btn {{item.speaking ? 'speaking' : ''}}"
+        catchtap="speakWhole"
+        data-fav-index="{{index}}"
+        data-en="{{item.translation}}"
+      >🔊</text>
+    </view>
+
+    <view class="fav-tags">
+      <text class="tag {{item.sourceTypeClass}}">{{item.sourceTypeLabel}}</text>
+      <text wx:if="{{item.sceneLabel}}" class="tag tag-gray">{{item.sceneLabel}}</text>
+    </view>
+
+    <view class="fav-footer">
+      <text class="fav-time">{{item.timeLabel}}</text>
+      <text class="fav-remove" catchtap="removeFav" data-id="{{item._id}}" data-index="{{index}}">移除</text>
+    </view>
+  </view>
+
+  <!-- 分页页脚：加载中 / 已到底 -->
+  <view class="list-footer" wx:if="{{loadingMore}}">加载中…</view>
+  <view class="list-footer" wx:elif="{{list.length && !hasMore}}">— 没有更多了 —</view>
+</view>

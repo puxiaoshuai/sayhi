@@ -1,0 +1,225 @@
+/* 给右下角悬浮录音按钮让位，避免遮住最后一张卡片（页面级样式，不影响其他页） */
+.page-wrap {
+  padding-bottom: 112px;
+}
+
+/* 输入卡 */
+.input-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+.textarea-box {
+  width: 100%;
+  height: 90px;
+  font-size: 15px;
+  color: #1e293b;
+  line-height: 1.5;
+}
+.input-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 10px;
+  margin-top: 4px;
+}
+.char-count {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* 右下角悬浮录音按钮：留在拇指自然可及的位置 */
+.mic-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 24px;
+  z-index: 100;
+  width: 68px;
+  height: 68px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #2f80ed 0%, #1d4ed8 100%);
+  box-shadow: 0 6px 16px rgba(47, 128, 237, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.mic-fab-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+.mic-fab-label {
+  font-size: 10px;
+  color: #ffffff;
+  line-height: 1;
+}
+.mic-fab.listening {
+  background: #ef4444;
+  animation: micPulse 1.2s infinite;
+}
+@keyframes micPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+}
+
+/* 录音浮层：常驻 DOM，靠 .show 切显隐。
+   不铺蒙层底色（同微信：只浮一块面板，页面照常可见），
+   但覆盖全屏以便接住手指上滑的手势。 */
+.record-mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.record-mask.show {
+  display: flex;
+}
+.record-panel {
+  width: 150px;
+  height: 150px;
+  border-radius: 20px;
+  background: rgba(30, 41, 59, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.record-panel.is-cancel {
+  background: rgba(153, 27, 27, 0.94);
+}
+.record-bars {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+}
+.rec-bar {
+  width: 4px;
+  border-radius: 2px;
+  background: #4ade80;
+  animation: recWave 1s infinite ease-in-out;
+}
+.record-panel.is-cancel .rec-bar {
+  background: #fca5a5;
+  animation-play-state: paused;
+}
+.b1 { height: 10px; animation-delay: 0s; }
+.b2 { height: 20px; animation-delay: 0.15s; }
+.b3 { height: 32px; animation-delay: 0.3s; }
+.b4 { height: 20px; animation-delay: 0.45s; }
+.b5 { height: 10px; animation-delay: 0.6s; }
+@keyframes recWave {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.record-time {
+  margin-top: 14px;
+  font-size: 15px;
+  color: #e2e8f0;
+}
+.record-tip {
+  margin-top: 20px;
+  padding: 6px 16px;
+  border-radius: 15px;
+  font-size: 13px;
+  color: #ffffff;
+  background: rgba(30, 41, 59, 0.75);
+  transition: background 0.15s;
+}
+.record-tip.is-cancel {
+  background: #dc2626;
+}
+
+.translate-btn {
+  background: linear-gradient(135deg, #2f80ed 0%, #1d4ed8 100%);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 20px;
+  padding: 0 16px;
+  line-height: 32px;
+  box-shadow: 0 4px 12px rgba(47, 128, 237, 0.3);
+}
+.translate-btn::after {
+  border: none;
+}
+
+/* 结果区 */
+.translation-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+.word-speaking {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+.card-actions {
+  display: flex;
+  gap: 10px;
+}
+.action-chip {
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 12px;
+  padding: 0 12px;
+  line-height: 28px;
+  border-radius: 8px;
+}
+.action-chip::after {
+  border: none;
+}
+.header-btns {
+  display: flex;
+  align-items: center;
+}
+.header-hint {
+  font-size: 11px;
+  color: #cbd5e1;
+}
+.word-clickable {
+  display: inline-block;
+}
+
+/* 句型 */
+.pattern-title {
+  font-weight: 600;
+  color: #2f80ed;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.pattern-desc {
+  font-size: 13px;
+  color: #334155;
+  margin-bottom: 6px;
+}
+.pattern-example {
+  font-size: 12px;
+  color: #64748b;
+  background: #f8fafc;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border-left: 3px solid #2f80ed;
+}
