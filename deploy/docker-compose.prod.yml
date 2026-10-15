@@ -4,12 +4,32 @@
 #   1. 开鉴权（本地那份没有，生产必须有）
 #   2. 宿主端口绑 127.0.0.1，公网扫不到
 #   3. 限制 wiredTiger 缓存到 0.25G —— 2G 内存机器不限制会被 Mongo 吃光
-#   4. 不带 mongo-express —— 数据库管理界面不要放在生产公网机上
+#   4. mongo-express 也只绑回环，并且**开着** Basic Auth
+#      （本地那份关掉鉴权、纯靠回环；生产要多一道，理由见下面那段服务注释）
 #
 # 用法（deploy/ 目录下）：
-#   echo "MONGO_PASSWORD=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)" > .env
 #   docker compose -f docker-compose.prod.yml up -d
 #   docker compose -f docker-compose.prod.yml ps
+#
+# 看数据（mongo-express 只监听回环，从你本机开隧道过去）：
+#   ssh -L 8082:127.0.0.1:8081 root@<服务器公网 IP>
+#   浏览器打开 http://localhost:8082 ，用户名 admin，密码见下面 ME_CONFIG_BASICAUTH_PASSWORD
+#   （隧道左边用 8082 是因为你本机 8081 被别的服务占了，跟本地那份 compose 一个原因）
+#
+# ⚠️ 关于密码 —— 直接写死在文件里，服务器上手动改成真的，两个后果要知道：
+#
+#   1. 同一个密码出现在**三处**，漏一处就出问题：
+#        · 下面 mongo 的 MONGO_INITDB_ROOT_PASSWORD
+#        · mongo-express 的 ME_CONFIG_MONGODB_URL      （漏 → 界面连不上库，容器重启循环）
+#        · server/.env 的 MONGODB_URI                  （漏 → 后端 502）
+#      以前走 deploy/.env 时它们是联动的，现在得靠人记住。
+#
+#   2. 本文件是 **git 跟踪** 的，而 deploy/deploy.sh 里有 git reset --hard（第 23 行），
+#      会把你在服务器上的手改静默冲回 mock-pass —— 不是报错，是变回去。
+#      想在服务器上手改，先执行一次（在仓库根目录）：
+#        git update-index --skip-worktree deploy/docker-compose.prod.yml
+#      代价是以后上游改这个文件你也收不到；要恢复：
+#        git update-index --no-skip-worktree deploy/docker-compose.prod.yml
 #
 # 密码刻意用纯字母数字：@ : / # + 这些字符写进 MONGODB_URI 会被当成分隔符，
 # 症状是"密码明明是对的却连不上库"，很难排查。
@@ -26,7 +46,9 @@ services:
     command: ["mongod", "--wiredTigerCacheSizeGB", "0.25"]
     environment:
       MONGO_INITDB_ROOT_USERNAME: sayhi
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?请先在 deploy/.env 里设置 MONGO_PASSWORD}
+      # 占位密码，服务器上改成真的。改这里的同时要改 mongo-express 的
+      # ME_CONFIG_MONGODB_URL 和 server/.env 的 MONGODB_URI（见文件头「关于密码」）。
+      MONGO_INITDB_ROOT_PASSWORD: mock-pass
     ports:
       - "127.0.0.1:27017:27017"
     volumes:
@@ -37,6 +59,36 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+
+  # 可视化界面，配置照抄仓库根目录那份 docker-compose.yml，只有环境变量不同。
+  # 本地那份关掉 Basic Auth 是图省事（开发机只有自己）；生产必须开着：
+  # 回环绑定挡的是公网，Basic Auth 挡的是"能登上这台机器的人"，
+  # 而 27017 是 root 权限 —— 两道都要。
+  #
+  # 两个提醒：
+  #   - 它以 root 身份连库，界面上「删除数据库」按钮真的会删，没有回收站，动数据前先备份（README §7.2）
+  #   - 2G 机器上它常驻占 100MB 左右，平时不看就 docker compose ... stop mongo-express
+  mongo-express:
+    image: mongo-express:1.0.2-20-alpine3.19
+    container_name: sayhi-mongo-express
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      # 走 compose 内网直连 mongo 服务，端口是容器内的标准 27017。
+      # 宿主那个 127.0.0.1:27017 是给 PM2 里的后端用的，这条路不经过它。
+      # ⚠️ 这里的密码必须和上面 MONGO_INITDB_ROOT_PASSWORD 一模一样，改一个忘一个的
+      #    症状是 mongo-express 启动后连不上库、容器反复重启。
+      ME_CONFIG_MONGODB_URL: mongodb://sayhi:mock-pass@mongo:27017/?authSource=admin
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true" # 显示所有库，而不只是默认库
+      ME_CONFIG_BASICAUTH: "true"
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: mock-pass
+    ports:
+      # 和 mongo 一样只绑回环。想换成挂域名走 Nginx，先想清楚这是在把 root 权限的
+      # 库管理界面推到公网 —— 隧道方案同样点几下鼠标，没有任何理由选那个。
+      - "127.0.0.1:8081:8081"
 
 volumes:
   sayhi-mongo-data:

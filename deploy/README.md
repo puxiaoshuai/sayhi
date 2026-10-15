@@ -108,12 +108,21 @@ mkdir -p /www/wwwroot/sayhi
 # 把仓库里的 deploy/docker-compose.prod.yml 传到 /www/wwwroot/sayhi/deploy/
 cd /www/wwwroot/sayhi/deploy
 
-# 设数据库密码：纯字母数字，刻意避开 @ : / # + 这类字符
-# （它们写进 MongoDB 连接串会被当成分隔符，症状是"密码明明对却连不上库"，见 §4.2）
-# 这条命令会在 deploy/ 下生成 .env，含明文密码，注意权限
-echo "MONGO_PASSWORD=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)" > .env
-chmod 600 .env
-cat .env   # 把这串密码抄下来，下一步 .env 要用
+# 密码直接写在 docker-compose.prod.yml 里（仓库里是占位值 mock-pass），在这里改成真的。
+# 纯字母数字，刻意避开 @ : / # + 这类字符 —— 它们写进 MongoDB 连接串会被当成分隔符，
+# 症状是"密码明明对却连不上库"，很难排查（见 §4.2）。
+#
+# ⚠️ 同一个密码要出现在三处，漏一处就出问题：
+#   1. docker-compose.prod.yml → mongo 的 MONGO_INITDB_ROOT_PASSWORD
+#   2. docker-compose.prod.yml → mongo-express 的 ME_CONFIG_MONGODB_URL  （漏 → 界面连不上库）
+#   3. server/.env             → MONGODB_URI                             （漏 → 后端 502）
+#   1、2 改完：docker compose -f docker-compose.prod.yml up -d
+#   3 改完：  pm2 reload sayhi-api --update-env
+#
+# ⚠️ 而 docker-compose.prod.yml 是 git 跟踪文件，deploy.sh 里的 git reset --hard（第 23 行）
+#    会把你的手改静默冲回 mock-pass —— 不是报错，是变回去。先执行一次（-C 是为了不改当前目录）：
+git -C /www/wwwroot/sayhi update-index --skip-worktree deploy/docker-compose.prod.yml
+#    代价：以后上游改这个文件你也收不到。要恢复：把 --skip-worktree 换成 --no-skip-worktree
 
 docker compose -f docker-compose.prod.yml up -d
 docker compose -f docker-compose.prod.yml ps    # 期望 mongo 处于 healthy
@@ -130,6 +139,37 @@ docker exec sayhi-mongo mongosh -u sayhi -p '你的密码' --authenticationDatab
 > **为什么 compose 里没有 `--bind_ip 127.0.0.1`**：docker 的端口发布是 DNAT 到容器网卡 IP，
 > 不是 127.0.0.1。mongod 只监听回环的话，宿主根本连不进去。对外隔离靠
 > `ports: "127.0.0.1:27017:27017"` 就够了 —— 这个细节踩过一次就会记住。
+
+### 3.1 看数据（mongo-express）
+
+生产这份 compose 也带了 mongo-express，配置照抄本地那份，区别只有一个：
+**它开着 Basic Auth，而且只监听回环**。数据库管理界面不能挂在公网 ——
+它以 root 身份连库，界面上那个「删除数据库」按钮没有任何二次确认。
+
+服务器上它只认 127.0.0.1，所以从**你本机**开一条隧道过去：
+
+```bash
+# 在本地机器执行（不是服务器上），窗口保持开着
+# 左边那个 8082 是**你本机**的端口，刻意不用 8081 —— 你本地 8081 已经被别的服务占了
+# （本地那份 docker-compose.yml 因此改用了 8082，见它的注释）
+ssh -L 8082:127.0.0.1:8081 root@<服务器公网 IP>
+
+# 然后浏览器打开 http://localhost:8082
+# 用户名 admin，密码是 docker-compose.prod.yml 里的 ME_CONFIG_BASICAUTH_PASSWORD
+```
+
+进去点 `sayhi` 库就能看集合和文档。
+
+两个提醒：
+
+- **动数据前先备份**（§7.2）。删除、改名这类操作是直接打到生产库上的。
+- 2G 内存机器上它常驻占 100MB 左右。平时不看可以停掉：
+  `docker compose -f docker-compose.prod.yml stop mongo-express`，
+  下次 `up -d` 会自己起来，不影响 mongo 和后端。
+
+> **为什么不挂到 `sayhi.puxiaoshuai.top` 下面某个路径？** 那等于把 root 权限的库管理界面
+> 推到公网，多一层 Nginx 认证也只是从"裸奔"变成"一把锁"；而隧道方案根本不对外开放端口。
+> 点鼠标的次数一样，没有理由选前者。这也正是 §2.3 说 27017 绝不能放行的同一个道理。
 
 ---
 
@@ -362,6 +402,7 @@ pm2 reload sayhi-api --update-env
 | 点读又变慢 / 百炼账单涨 | `tts-cache` 被清掉了 | 检查部署脚本没用 `git clean` / `rm -rf` |
 | 构建到一半进程消失 | OOM | 加 swap（§2.1）、压 `--max-old-space-size`、或改本地构建 |
 | 服务器整体卡死 | Mongo 吃满内存 | 确认容器带了 `--wiredTigerCacheSizeGB 0.25` |
+| mongo-express 打不开 | 隧道没开 / 端口搞混 / 容器没起 | `ssh -L 8082:127.0.0.1:8081 root@服务器`，浏览器开 `localhost:8082`；再 `docker compose -f docker-compose.prod.yml ps` 确认容器在跑 |
 | 能 ping 通但网页打不开 | 域名未备案（国内机房）或安全组没放 80/443 | §1.1、§2.3 |
 
 ---
@@ -374,6 +415,8 @@ pm2 reload sayhi-api --update-env
 - [ ] SELinux 已关、firewalld 已停
 - [ ] 安全组只放行 22/80/443
 - [ ] MongoDB 带鉴权、只绑 127.0.0.1、`wiredTigerCacheSizeGB=0.25`
+- [ ] mongo-express 密码已改（不再是 `mock-pass`）、Basic Auth 开着、只绑 127.0.0.1
+- [ ] `git update-index --skip-worktree deploy/docker-compose.prod.yml` 已执行（否则手改的密码会被 deploy.sh 冲掉）
 - [ ] 生产 `.env` 重设了 `JWT_SECRET` / `ACCESS_PASSWORD_HASH` / Mongo 密码，权限 600
 - [ ] `npm run build` 产出 `dist/main.js`
 - [ ] 跑过 `npx ts-node scripts/seed-scenes.ts`
