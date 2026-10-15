@@ -23,7 +23,7 @@ module.exports = {
       max_memory_restart: '400M',
       env: {
         NODE_ENV: 'production',
-        PORT: '3000',
+        PORT: '8121',
       },
       out_file: '/www/wwwlogs/sayhi-api.out.log',
       error_file: '/www/wwwlogs/sayhi-api.err.log',

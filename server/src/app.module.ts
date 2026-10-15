@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { TranslationModule } from './translation/translation.module';
 import { ScenesModule } from './scenes/scenes.module';
@@ -21,5 +22,6 @@ import { TtsModule } from './tts/tts.module';
     AsrModule,
     TtsModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}

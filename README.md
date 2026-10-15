@@ -60,7 +60,7 @@ cp .env.example .env   # Windows: copy .env.example .env
 # （可选但推荐）预热场景内容，4 个房间各生成一次入库
 npm run seed:scenes
 
-# 启动开发服务（默认 3000 端口）
+# 启动开发服务（默认 8121 端口）
 npm run start:dev
 ```
 

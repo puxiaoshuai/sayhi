@@ -2,7 +2,7 @@
 
 目标环境：**OpenCloudOS 9.6 x86_64 / 2 核 2G / 宝塔面板 / 域名 `sayhi.puxiaoshuai.top`**
 
-架构：小程序（不部署到服务器）→ Nginx:443 → NestJS:3000（PM2）→ MongoDB:27017（Docker，仅回环）
+架构：小程序（不部署到服务器）→ Nginx:443 → NestJS:8121（PM2）→ MongoDB:27017（Docker，仅回环）
 
 ---
 
@@ -64,7 +64,7 @@ free -h   # 确认 Swap 一行有 2.0Gi
 
 ### 2.2 关掉 SELinux 和 firewalld
 
-OpenCloudOS 9 属 **RHEL 9 系**，默认开 SELinux。它开着时 Nginx 反代到 127.0.0.1:3000
+OpenCloudOS 9 属 **RHEL 9 系**，默认开 SELinux。它开着时 Nginx 反代到 127.0.0.1:8121
 会被策略拦掉，表现是 **502 Bad Gateway，且 Nginx 错误日志只写 `Permission denied`**。
 宝塔安装脚本一般已经处理过，但仍需确认：
 
@@ -83,7 +83,7 @@ systemctl stop firewalld && systemctl disable firewalld
 
 只放行 **22 / 80 / 443**。
 
-**3000 和 27017 绝对不要放行** —— 数据库端口暴露到公网，几小时内就会被扫到并勒索删库。
+**8121 和 27017 绝对不要放行** —— 后端和数据库端口暴露到公网，几小时内就会被扫到并勒索删库。
 后面 MongoDB 会绑回环、Node 会被 Nginx 挡在前面，安全组是第三道保险。
 
 ### 2.4 宝塔软件商店装四样
@@ -214,10 +214,14 @@ pm2 startup    # 按提示复制执行它输出的那条命令，实现开机自
 验证：
 
 ```bash
-curl -i http://127.0.0.1:3000/api/tts/config
-# 期望 401（未带 token）。返回 401 说明服务活着且路由正常 —— 这是预期结果，不是错误。
+curl -i http://127.0.0.1:8121/api/hi
+# 期望 200 + 正文 hello world —— 服务活着且路由正常
 pm2 logs sayhi-api --lines 30
 ```
+
+> `/api/hi` 是专门留的探活接口（见 `server/src/app.controller.ts`），不带鉴权、不碰数据库，
+> 浏览器里直接打开也行。应用能起来本身就说明 Mongo 连接没问题 —— 连不上库时
+> `MongooseModule.forRoot` 会挂在启动阶段，根本到不了监听端口这一步。
 
 > `ecosystem.config.js` 里 `cwd` 写的是绝对路径 `/www/wwwroot/sayhi/server`，不能省。
 > 后端用 `ConfigModule` 从 `process.cwd()` 读 `.env`，`TTS_CACHE_DIR=./tts-cache`
@@ -256,10 +260,10 @@ nginx -t && nginx -s reload
 ### 5.4 全链路验证
 
 ```bash
-curl -i https://sayhi.puxiaoshuai.top/api/tts/config
-# 期望 401 + 有效证书链（没有 -k 也不报证书错误）
+curl -i https://sayhi.puxiaoshuai.top/api/hi
+# 期望 200 + 正文 hello world + 有效证书链（没有 -k 也不报证书错误）
 
-curl -I https://sayhi.puxiaoshuai.top/api/tts/config | grep -i "server\|strict-transport"
+curl -I https://sayhi.puxiaoshuai.top/api/hi | grep -i "server\|strict-transport"
 ```
 
 再确认一下 TLS 版本达标（微信要求 ≥ 1.2）：
@@ -375,7 +379,7 @@ pm2 reload sayhi-api --update-env
 - [ ] 跑过 `npx ts-node scripts/seed-scenes.ts`
 - [ ] PM2 已启动、`pm2 save`、`pm2 startup`
 - [ ] Nginx 证书已申请、强制 HTTPS 已开、`client_max_body_size 16m` 已加
-- [ ] `curl https://sayhi.puxiaoshuai.top/api/tts/config` 返回 401（服务活着）
+- [ ] `curl https://sayhi.puxiaoshuai.top/api/hi` 返回 200 hello world（服务活着）
 - [ ] `config.js` 的 `BASE_URL` 已改并重新上传小程序
 - [ ] 小程序后台 request 合法域名已添加
 - [ ] 宝塔计划任务已配每日 mongodump 备份
