@@ -1,7 +1,7 @@
 <!-- 密码确认页：启动第一道门，通过后 30 分钟内免输（见技术方案 6.6） -->
 <view class="lock-screen">
   <view class="lock-icon">🔒</view>
-  <view class="lock-title">智能英语外教</view>
+  <view class="lock-title">SayHi</view>
   <view class="lock-desc">个人使用 · 请输入访问密码</view>
 
   <!-- input 为原生组件，在 flex 纵向容器里直接写 width:100% 会被压缩成内容宽，故外层加一层容器控制宽度 -->

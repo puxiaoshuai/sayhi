@@ -13,11 +13,6 @@
     "backgroundColor": "#F5F7FA",
     "backgroundTextStyle": "dark"
   },
-  "permission": {
-    "scope.record": {
-      "desc": "用于把你的中文语音转成文字，进行英文翻译拆解"
-    }
-  },
   "tabBar": {
     "color": "#94a3b8",
     "selectedColor": "#2F80ED",
