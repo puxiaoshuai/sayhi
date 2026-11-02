@@ -63,7 +63,13 @@ export class CreateFavoriteDto {
   patterns?: PatternItemDto[];
 
   @IsOptional()
-  @IsIn(['translation', 'scene_word', 'scene_expression'])
+  @IsIn([
+    'translation',
+    'scene_word',
+    'scene_expression',
+    'daily_word',
+    'daily_sentence',
+  ])
   sourceType?: string;
 
   @IsOptional()

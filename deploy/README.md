@@ -243,6 +243,19 @@ npx ts-node scripts/seed-scenes.ts
 （将来加了内置场景，在 `scene.seeds.ts` 加一条后重新跑这个命令即可；
 自定义场景不用管，用户在场景页输入名字后后端生成一次永久复用。）
 
+### 4.4.1 每日一文（无需手动操作）
+
+每日一文**不需要**任何预热或面板配置：`@nestjs/schedule` 的进程内 cron 每天
+06:00（Asia/Shanghai）自动生成当天文章，`ecosystem.config.js` 是 fork 单实例，
+cron 不会重复触发。新依赖 `@nestjs/schedule` 由 `deploy.sh` 的 `npm ci` 自动安装。
+
+- **错过 6 点**（pm2 reload / 停机跨点）：不补跑，读接口查库未命中时按需生成兜底，
+  只是当天首个用户要等 10~30 秒；
+- **不想让首用户等**：部署后手动 `npx ts-node scripts/seed-daily.ts`（幂等），
+  或 `curl http://127.0.0.1:8121/api/daily-article` 触发一次；
+- **观察**：`pm2 logs sayhi-api` 次日 6 点后应出现「每日一文已生成：YYYY-MM-DD（题材）」；
+  也可 `docker exec <mongo容器> mongosh sayhi --eval "db.dailyarticles.find().sort({date:-1}).limit(3)"` 查库。
+
 ### 4.5 PM2 启动
 
 ```bash

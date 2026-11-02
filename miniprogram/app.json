@@ -4,7 +4,8 @@
     "pages/home/home",
     "pages/scenes/scenes",
     "pages/scene-detail/scene-detail",
-    "pages/favorites/favorites"
+    "pages/favorites/favorites",
+    "pages/daily-article/daily-article"
   ],
   "window": {
     "navigationBarBackgroundColor": "#ffffff",
@@ -21,6 +22,7 @@
     "list": [
       { "pagePath": "pages/home/home", "text": "🌐 翻译" },
       { "pagePath": "pages/scenes/scenes", "text": "🏠 场景" },
+      { "pagePath": "pages/daily-article/daily-article", "text": "📰 每日一文" },
       { "pagePath": "pages/favorites/favorites", "text": "📖 生词本" }
     ]
   },

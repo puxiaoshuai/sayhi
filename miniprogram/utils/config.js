@@ -4,5 +4,6 @@
  * 生产：替换为你自己的已备案 HTTPS 域名（见技术方案 6.2）
  */
 module.exports = {
-  BASE_URL: 'https://sayhi.puxiaoshuai.top',
+  // BASE_URL: 'https://sayhi.puxiaoshuai.top',
+  BASE_URL: 'http://localhost:8121',
 };

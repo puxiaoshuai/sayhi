@@ -13,6 +13,8 @@ const SOURCE_LABELS = {
   translation: { label: '翻译收藏', cls: 'tag-blue' },
   scene_word: { label: '场景词汇', cls: 'tag-green' },
   scene_expression: { label: '场景语句', cls: 'tag-green' },
+  daily_word: { label: '每日单词', cls: 'tag-green' },
+  daily_sentence: { label: '每日美文', cls: 'tag-blue' },
 };
 
 Page({

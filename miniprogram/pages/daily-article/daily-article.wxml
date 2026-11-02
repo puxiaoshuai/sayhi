@@ -1,0 +1,94 @@
+<view class="page-wrap" wx:if="{{article}}">
+  <!-- 日期导航：前后翻页看历史文章 -->
+  <view class="daily-nav">
+    <view class="daily-nav-btn" bindtap="onPrev">‹ 前一天</view>
+    <view class="daily-nav-date">
+      <text class="daily-nav-label">{{dateLabel}}</text>
+      <text wx:if="{{isToday}}" class="tag tag-blue">今天</text>
+    </view>
+    <view class="daily-nav-btn {{canNext ? '' : 'disabled'}}" bindtap="onNext">后一天 ›</view>
+  </view>
+
+  <!-- 标题 -->
+  <view class="card">
+    <view class="card-header">
+      <text class="card-title" bindtap="speakTitle">{{article.title}}</text>
+      <text class="header-hint">点标题可朗读</text>
+    </view>
+    <view class="daily-title-zh">{{article.titleZh}}</view>
+    <text class="tag tag-green">{{article.topic}}</text>
+  </view>
+
+  <!-- 正文段落 -->
+  <view class="card">
+    <view class="card-header">
+      <text class="card-title">📄 正文</text>
+      <text class="header-hint">点单词单独读 · 🔊 读整段</text>
+    </view>
+    <view class="expr-item" wx:for="{{article.paragraphs}}" wx:key="en">
+      <view class="vocab-top">
+        <view class="expr-en">
+          <!-- 段内单词点读（见技术方案 6.5） -->
+          <block wx:for="{{item.segs}}" wx:for-item="seg" wx:for-index="innerIndex" wx:key="index">
+            <text>{{seg.pre}}</text>
+            <text
+              wx:if="{{seg.word}}"
+              class="word-tap {{seg.speaking ? 'word-speaking' : ''}}"
+              catchtap="onWordTap"
+              data-para-index="{{index}}"
+              data-seg-index="{{innerIndex}}"
+              data-word="{{seg.word}}"
+            >{{seg.word}}</text>
+            <text>{{seg.post}}</text>
+          </block>
+        </view>
+        <view class="expr-btns">
+          <text class="speak-btn {{item.speaking ? 'speak-btn-active' : ''}}" catchtap="speakPara" data-index="{{index}}">🔊</text>
+          <text
+            class="star-btn {{item.favorited ? 'active' : ''}}"
+            catchtap="favPara"
+            data-index="{{index}}"
+          >⭐</text>
+        </view>
+      </view>
+      <view class="expr-zh">{{item.zh}}</view>
+    </view>
+  </view>
+
+  <!-- 重点单词 -->
+  <view class="card">
+    <view class="card-header">
+      <text class="card-title">📖 重点单词</text>
+      <text class="header-hint">点击英文可朗读</text>
+    </view>
+    <view class="vocab-item" wx:for="{{article.words}}" wx:key="word">
+      <view class="vocab-top">
+        <view
+          class="vocab-clickable"
+          bindtap="speakWord"
+          data-word="{{item.word}}"
+        >
+          <text class="vocab-word">{{item.word}}</text>
+          <text class="vocab-phonetic"> {{item.phonetic}}</text>
+        </view>
+        <text
+          class="star-btn {{item.favorited ? 'active' : ''}}"
+          catchtap="favWord"
+          data-index="{{index}}"
+        >⭐</text>
+      </view>
+      <view class="vocab-meaning">{{item.pos}} {{item.meaning}}</view>
+    </view>
+  </view>
+</view>
+
+<!-- 加载中（当天文章尚未生成时，后端现场生成约需 10~30 秒） -->
+<view class="loading-wrap" wx:elif="{{loading}}">
+  <view class="loading-text">📰 文章准备中（首次生成约需 10~30 秒）...</view>
+</view>
+
+<!-- 生成失败：给手动重试入口 -->
+<view class="loading-wrap" wx:else>
+  <view class="loading-text">文章生成失败，请稍后重试</view>
+  <button class="daily-retry-btn" size="mini" bindtap="retry">重试</button>
+</view>

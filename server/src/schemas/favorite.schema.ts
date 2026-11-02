@@ -4,7 +4,9 @@ import { Document, Types } from 'mongoose';
 export type FavoriteSource =
   | 'translation'
   | 'scene_word'
-  | 'scene_expression';
+  | 'scene_expression'
+  | 'daily_word'
+  | 'daily_sentence';
 
 @Schema({ timestamps: true })
 export class Favorite extends Document {
@@ -53,10 +55,16 @@ export class Favorite extends Document {
 
   @Prop({
     required: true,
-    enum: ['translation', 'scene_word', 'scene_expression'],
+    enum: [
+      'translation',
+      'scene_word',
+      'scene_expression',
+      'daily_word',
+      'daily_sentence',
+    ],
     default: 'translation',
   })
-  sourceType: FavoriteSource; // 收藏来源：翻译查询 / 场景词汇 / 场景语句
+  sourceType: FavoriteSource; // 收藏来源：翻译查询 / 场景词汇 / 场景语句 / 每日一文单词 / 每日一文段落
 
   @Prop({ default: null })
   sceneKey: string; // 来源场景标识（如 'home-kitchen'），翻译查询时为 null

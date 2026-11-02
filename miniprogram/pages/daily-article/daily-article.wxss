@@ -1,0 +1,95 @@
+/* 日期导航条 */
+.daily-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 10px 14px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+}
+.daily-nav-btn {
+  font-size: 13px;
+  color: #2f80ed;
+  padding: 4px 8px;
+}
+.daily-nav-btn.disabled {
+  color: #cbd5e1;
+}
+.daily-nav-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.daily-nav-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* 标题卡 */
+.daily-title-zh {
+  font-size: 13px;
+  color: #64748b;
+  margin: 4px 0 8px;
+}
+
+/* 段落与单词点读（类名沿用 scene-detail 的既有风格，保证视觉一致） */
+.expr-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #f8fafc;
+}
+.expr-item:last-child {
+  border-bottom: none;
+}
+.expr-en {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 14px;
+  line-height: 1.6;
+  flex: 1;
+  margin-right: 8px;
+}
+.word-speaking {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+.expr-btns {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.speak-btn {
+  font-size: 15px;
+  padding: 2px 4px;
+}
+.speak-btn-active {
+  opacity: 0.4;
+}
+.expr-zh {
+  font-size: 13px;
+  color: #475569;
+  margin-top: 4px;
+}
+.vocab-clickable {
+  display: inline-block;
+  flex: 1;
+}
+
+/* 加载 / 失败态 */
+.loading-wrap {
+  padding-top: 40vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.loading-text {
+  font-size: 13px;
+  color: #94a3b8;
+}
+.daily-retry-btn {
+  background: #2f80ed;
+  color: #ffffff;
+  font-size: 13px;
+}
