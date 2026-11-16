@@ -9,12 +9,12 @@ import { ScenesModule } from './scenes/scenes.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { AsrModule } from './asr/asr.module';
 import { TtsModule } from './tts/tts.module';
-import { DailyArticleModule } from './daily-article/daily-article.module';
+import { DailySentencesModule } from './daily-sentences/daily-sentences.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    // 定时调度器（每日一文 06:00 预生成等）。forRoot 是全局注册，放应用根模块
+    // 定时调度器（每日口语 06:00 预生成等）。forRoot 是全局注册，放应用根模块
     ScheduleModule.forRoot(),
     MongooseModule.forRoot(
       process.env.MONGODB_URI || 'mongodb://localhost:27017/sayhi',
@@ -25,7 +25,7 @@ import { DailyArticleModule } from './daily-article/daily-article.module';
     FavoritesModule,
     AsrModule,
     TtsModule,
-    DailyArticleModule,
+    DailySentencesModule,
   ],
   controllers: [AppController],
 })

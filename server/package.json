@@ -8,7 +8,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "seed:scenes": "ts-node scripts/seed-scenes.ts",
-    "seed:daily": "ts-node scripts/seed-daily.ts"
+    "seed:daily-sentences": "ts-node scripts/seed-daily-sentences.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",

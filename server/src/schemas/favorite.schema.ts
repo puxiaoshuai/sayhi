@@ -1,6 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
+/**
+ * daily_word 为旧「每日一文」单词收藏的遗留值（回显用，不再产生新记录）；
+ * daily_sentence 由「每日口语」与旧「每日一文」段落收藏共用，
+ * 靠 sceneName 快照区分（新='每日口语'，旧='每日一文'）。
+ */
 export type FavoriteSource =
   | 'translation'
   | 'scene_word'
@@ -64,7 +69,7 @@ export class Favorite extends Document {
     ],
     default: 'translation',
   })
-  sourceType: FavoriteSource; // 收藏来源：翻译查询 / 场景词汇 / 场景语句 / 每日一文单词 / 每日一文段落
+  sourceType: FavoriteSource; // 收藏来源：翻译查询 / 场景词汇 / 场景语句 / 每日口语句子（枚举语义见 FavoriteSource 注释）
 
   @Prop({ default: null })
   sceneKey: string; // 来源场景标识（如 'home-kitchen'），翻译查询时为 null

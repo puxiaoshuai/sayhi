@@ -100,13 +100,20 @@ Page({
     const src = SOURCE_LABELS[f.sourceType] || SOURCE_LABELS.translation;
     const isSentence =
       f.sourceType !== 'scene_word' && /\s/.test(String(f.translation).trim());
+    // daily_sentence 被每日口语与旧每日一文的段落收藏共用：优先用收藏时存的
+    // sceneName 快照区分（新='每日口语'，旧='每日一文'），无快照的更早记录
+    // 兜底映射表的「每日美文」
+    const isDailySentence = f.sourceType === 'daily_sentence';
     return {
       ...f,
-      sourceTypeLabel: src.label,
+      sourceTypeLabel: isDailySentence ? (f.sceneName || src.label) : src.label,
       sourceTypeClass: src.cls,
       // 优先用收藏时存下的场景名快照：自定义场景的 sceneKey 是无意义哈希，
-      // 静态映射表兜不住；这里保留 sceneName 兜底是为了兼容加字段前的老收藏
-      sceneLabel: f.sceneName || (f.sceneKey ? sceneName(f.sceneKey) : ''),
+      // 静态映射表兜不住；这里保留 sceneName 兜底是为了兼容加字段前的老收藏。
+      // daily_sentence 的快照已用作上方来源标签，灰 tag 置空避免重复显示同一词
+      sceneLabel: isDailySentence
+        ? ''
+        : f.sceneName || (f.sceneKey ? sceneName(f.sceneKey) : ''),
       segs: isSentence ? wrapWords(f.translation) : null,
       timeLabel: f.createdAt ? f.createdAt.slice(0, 16).replace('T', ' ') : '',
     };
